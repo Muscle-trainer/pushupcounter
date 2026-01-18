@@ -2,9 +2,10 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+
 <title>腕立て伏せ自動カウンター｜カメラで回数を数える無料Webアプリ</title>
 
-<meta name="description" content="スマホやPCのカメラで腕立て伏せの回数を自動でカウント。MediaPipe姿勢推定を使用した無料Webアプリ。インストール不要。">
+<meta name="description" content="スマホやPCのカメラで腕立て伏せの回数を自動でカウントできる無料Webアプリ。MediaPipe姿勢推定を使用。インストール不要。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/">
@@ -22,7 +23,7 @@ body {
   text-align: center;
 }
 
-h1 { font-size: 1.5rem; }
+h1 { font-size: 1.6rem; }
 
 #container {
   position: relative;
@@ -99,9 +100,9 @@ button, input {
 <section>
 <h2>使い方</h2>
 <ol>
-<li>カメラに正面を向けます</li>
-<li>スタートを押します</li>
-<li>腕立て伏せを行うと自動でカウントされます</li>
+<li>カメラに正面を向いてください</li>
+<li>スタートを押してください</li>
+<li>腕立て伏せを行うと自動で回数がカウントされます</li>
 </ol>
 </section>
 
@@ -111,20 +112,18 @@ if (/Line/i.test(navigator.userAgent)) {
   document.getElementById("line-warning").style.display = "block";
 }
 
-// 音
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function beep(freq, duration) {
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.frequency.value = freq;
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-  osc.stop(audioCtx.currentTime + duration);
+// ===== 音声 =====
+const countSound = new Audio("count.mp3");
+const goalSound  = new Audio("goal.mp3");
+
+function enableSound() {
+  countSound.play().then(() => {
+    countSound.pause();
+    countSound.currentTime = 0;
+  }).catch(()=>{});
 }
 
-// 状態
+// ===== 状態 =====
 let count = 0;
 let running = false;
 let state = "up";
@@ -132,7 +131,10 @@ let state = "up";
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+const countEl = document.getElementById("count");
+const targetEl = document.getElementById("target");
 
+// ===== Pose =====
 const pose = new Pose({
   locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
 });
@@ -155,7 +157,6 @@ pose.onResults(results => {
 
   if (!running) return;
 
-  // 両肩の平均高さ
   const shoulderY =
     (results.poseLandmarks[11].y +
      results.poseLandmarks[12].y) / 2;
@@ -165,17 +166,20 @@ pose.onResults(results => {
   if (shoulderY < 0.5 && state === "down") {
     state = "up";
     count++;
-    document.getElementById("count").textContent = count;
-    beep(900, 0.15);
+    countEl.textContent = count;
 
-    if (count >= Number(document.getElementById("target").value)) {
-      beep(400, 0.6);
+    countSound.currentTime = 0;
+    countSound.play();
+
+    if (count >= Number(targetEl.value)) {
+      goalSound.play();
       running = false;
       alert("目標達成！");
     }
   }
 });
 
+// ===== Camera =====
 const camera = new Camera(video, {
   onFrame: async () => {
     await pose.send({ image: video });
@@ -193,19 +197,21 @@ video.onloadedmetadata = () => {
   canvas.height = video.videoHeight;
 };
 
-// ボタン
+// ===== Buttons =====
 document.getElementById("start").onclick = () => {
-  audioCtx.resume();
+  enableSound();
   running = true;
 };
 
-document.getElementById("pause").onclick = () => running = false;
+document.getElementById("pause").onclick = () => {
+  running = false;
+};
 
 document.getElementById("reset").onclick = () => {
   running = false;
   count = 0;
   state = "up";
-  document.getElementById("count").textContent = 0;
+  countEl.textContent = 0;
 };
 </script>
 
