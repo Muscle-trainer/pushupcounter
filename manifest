@@ -1,0 +1,8 @@
+{
+  "name": "腕立て伏せカウンター",
+  "short_name": "PushUp Counter",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d6efd"
+}
