@@ -1,264 +1,215 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Push-up Counter Web App</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- MediaPipe -->
+<title>腕立て伏せカウンター|カメラで自動カウントできる無料Webアプリ</title>
+
+<meta name="description" content="スマホやPCのカメラで腕立て伏せの回数を自動でカウントできる無料Webアプリ。インストール不要、目標回数設定、音通知、PWA対応。">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="index, follow">
+
+<link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/">
+
+<meta name="theme-color" content="#0d6efd">
+<link rel="manifest" href="manifest.json">
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
 <style>
 body {
-  margin: 0;
   font-family: system-ui, sans-serif;
-  background: #0f0f0f;
-  color: #fff;
-}
-
-header {
-  text-align: center;
+  margin: 0;
   padding: 12px;
-  font-size: 26px;
-  font-weight: bold;
+  background: #f5f5f5;
 }
 
-#description {
+h1 {
+  font-size: 1.6rem;
   text-align: center;
-  font-size: 14px;
-  color: #ccc;
-  padding: 0 12px 10px;
-  line-height: 1.6;
 }
 
-#app {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+h2 {
+  margin-top: 24px;
 }
 
-#controls {
+video {
+  width: 100%;
+  max-width: 480px;
+  display: block;
+  margin: 0 auto;
+  border-radius: 12px;
+}
+
+button, input {
+  font-size: 1rem;
+  padding: 10px;
+  margin: 4px;
+}
+
+.counter {
   text-align: center;
+  font-size: 2rem;
   margin: 10px;
 }
 
-input, button {
-  font-size: 16px;
-  padding: 8px 12px;
-  margin: 5px;
-}
-
-canvas {
-  width: 100%;
-  max-width: 600px;
-  transform: scaleX(-1);
-}
-
-#counter {
-  font-size: 56px;
-  margin-top: 10px;
-  transition: transform 0.2s;
-  text-align: center;
-}
-
-.animate {
-  transform: scale(1.3);
-}
-
-#status {
-  font-size: 20px;
-  margin-top: 5px;
-  color: #6cf;
-  text-align: center;
-}
-
-/* ===== 横向き最適化 ===== */
-@media (orientation: landscape) {
-  #app {
-    flex-direction: row;
-    height: calc(100vh - 120px);
-  }
-
-  canvas {
-    max-width: none;
-    width: 65vw;
-    height: auto;
-  }
-
-  #sidePanel {
-    width: 35vw;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
-  #controls {
-    margin: 0;
-  }
-
-  #counter {
-    font-size: 72px;
-  }
+.warning {
+  display: none;
+  background: #ffecec;
+  color: #900;
+  padding: 10px;
+  margin-bottom: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<header>Push-up Counter</header>
-
-<div id="description">
-  腕立て伏せ自動回数カウンターです。<br>
-  カメラで姿勢を認識し、腕立て伏せの回数をカウントします。
-  カメラの前で、顔,肩,肘が映る状態で腕立て伏せを行ってください。<br>
-  START:計測開始  PAUSE:一時停止  RESUME:再開  RESET:リセット<br>
-  ※カメラ映像は端末内で処理され、外部に送信・保存されることはありません。<br>
+<div id="line-warning" class="warning">
+⚠ このサイトは LINEアプリ内ブラウザではカメラが使用できません。<br>
+右上「︙」→「ブラウザで開く」を選択してください。
 </div>
 
-<div id="app">
+<h1>腕立て伏せ自動カウンター</h1>
 
-  <video id="video" playsinline style="display:none;"></video>
-  <canvas id="canvas"></canvas>
+<p style="text-align:center;">
+スマートフォンやパソコンのカメラを使って<br>
+腕立て伏せの回数を自動でカウントする無料Webアプリです。
+</p>
 
-  <div id="sidePanel">
-    <div id="controls">
-      目標回数：
-      <input type="number" id="target" value="10" min="1"><br>
-      <button id="startBtn">START</button>
-      <button id="pauseBtn" disabled>PAUSE</button>
-      <button id="resetBtn">RESET</button>
-    </div>
+<video id="video" playsinline></video>
 
-    <div id="counter">0</div>
-    <div id="status">Ready</div>
-  </div>
-
+<div class="counter">
+回数：<span id="count">0</span>
 </div>
 
-<audio id="countSound" src="count.mp3"></audio>
-<audio id="goalSound" src="goal.mp3"></audio>
+<div style="text-align:center;">
+目標回数：
+<input type="number" id="target" value="10" min="1">
+</div>
+
+<div style="text-align:center;">
+<button id="start">スタート</button>
+<button id="pause">一時停止</button>
+<button id="reset">リセット</button>
+</div>
+
+<section>
+<h2>このサイトについて</h2>
+<p>
+このサイトは、MediaPipe Pose を用いた姿勢推定技術により、
+ユーザーの動作を解析し、腕立て伏せ（プッシュアップ）の回数を
+自動でカウントする無料のWebアプリです。
+</p>
+<p>
+インストール不要で、スマートフォンやパソコンのブラウザから
+すぐに利用できます。目標回数の設定や、カウント時・目標達成時の
+音通知にも対応しています。
+</p>
+</section>
+
+<section>
+<h2>使い方</h2>
+<ol>
+<li>カメラに対して正面を向きます</li>
+<li>スタートボタンを押します</li>
+<li>腕立て伏せを行うと自動で回数がカウントされます</li>
+<li>目標回数に到達すると通知音が鳴ります</li>
+</ol>
+</section>
+
+<section>
+<h2>注意事項</h2>
+<ul>
+<li>LINEアプリ内ブラウザではカメラが使用できません</li>
+<li>カメラ使用許可を必ず許可してください</li>
+<li>十分な明るさのある環境で使用してください</li>
+</ul>
+</section>
 
 <script>
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+/* LINE内ブラウザ検出 */
+if (/Line/i.test(navigator.userAgent)) {
+  document.getElementById("line-warning").style.display = "block";
+}
 
-const counterEl = document.getElementById("counter");
-const statusEl = document.getElementById("status");
-
-const countSound = document.getElementById("countSound");
-const goalSound = document.getElementById("goalSound");
-
-const startBtn = document.getElementById("startBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-const resetBtn = document.getElementById("resetBtn");
+/* 音 */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function beep(freq, duration) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.frequency.value = freq;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+  osc.stop(audioCtx.currentTime + duration);
+}
 
 let count = 0;
-let target = 10;
-let position = null;
 let running = false;
-let paused = false;
+let position = null;
+
+const countEl = document.getElementById("count");
+const targetEl = document.getElementById("target");
 
 const pose = new Pose({
-  locateFile: file =>
-    `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+  locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
 });
 
 pose.setOptions({
-  modelComplexity: 1,
-  smoothLandmarks: true,
   minDetectionConfidence: 0.7,
   minTrackingConfidence: 0.7
 });
 
-pose.onResults(onResults);
+pose.onResults(results => {
+  if (!running || !results.poseLandmarks) return;
+
+  const lm = results.poseLandmarks;
+  if (lm[12].y > lm[14].y && lm[11].y > lm[13].y) position = "down";
+
+  if (lm[12].y < lm[14].y && lm[11].y < lm[13].y && position === "down") {
+    position = "up";
+    count++;
+    countEl.textContent = count;
+    beep(900, 0.15);
+
+    if (count >= Number(targetEl.value)) {
+      beep(400, 0.6);
+      running = false;
+      alert("目標達成！");
+    }
+  }
+});
+
+const video = document.getElementById("video");
 
 const camera = new Camera(video, {
   onFrame: async () => {
-    if (running && !paused) {
-      await pose.send({ image: video });
-    }
+    await pose.send({ image: video });
   },
   width: 640,
   height: 480
 });
 
-startBtn.onclick = () => {
-  count = 0;
-  counterEl.textContent = count;
-  target = Number(document.getElementById("target").value);
-  position = null;
+camera.start().catch(() => {
+  alert("カメラを起動できません。ブラウザで開いているか確認してください。");
+});
+
+document.getElementById("start").onclick = () => {
+  audioCtx.resume();
   running = true;
-  paused = false;
-  pauseBtn.textContent = "PAUSE";
-  pauseBtn.disabled = false;
-  statusEl.textContent = "Running";
-  camera.start();
 };
-
-pauseBtn.onclick = () => {
-  paused = !paused;
-  pauseBtn.textContent = paused ? "RESUME" : "PAUSE";
-  statusEl.textContent = paused ? "Paused" : "Running";
-};
-
-resetBtn.onclick = () => {
+document.getElementById("pause").onclick = () => running = false;
+document.getElementById("reset").onclick = () => {
   running = false;
-  paused = false;
   count = 0;
   position = null;
-  counterEl.textContent = "0";
-  statusEl.textContent = "Reset / Ready";
-  pauseBtn.textContent = "PAUSE";
-  pauseBtn.disabled = true;
+  countEl.textContent = 0;
 };
-
-function onResults(results) {
-  canvas.width = results.image.width;
-  canvas.height = results.image.height;
-
-  ctx.save();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-
-  if (results.poseLandmarks) {
-    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
-      { color: "#00ff88", lineWidth: 2 });
-    drawLandmarks(ctx, results.poseLandmarks,
-      { color: "#ff4444", lineWidth: 2 });
-
-    const lm = results.poseLandmarks;
-    const shoulderY = (lm[11].y + lm[12].y) / 2;
-    const elbowY = (lm[13].y + lm[14].y) / 2;
-
-    if (shoulderY > elbowY) position = "down";
-    if (shoulderY < elbowY && position === "down") {
-      position = "up";
-      incrementCount();
-    }
-  }
-  ctx.restore();
-}
-
-function incrementCount() {
-  count++;
-  counterEl.textContent = count;
-  counterEl.classList.add("animate");
-  countSound.currentTime = 0;
-  countSound.play();
-
-  setTimeout(() => counterEl.classList.remove("animate"), 200);
-
-  if (count >= target) {
-    statusEl.textContent = "YOU DID IT!!";
-    goalSound.play();
-    running = false;
-    pauseBtn.disabled = true;
-  }
-}
 </script>
 
 </body>
