@@ -3,179 +3,221 @@
 <head>
 <meta charset="UTF-8">
 
-<!-- ★ Google Search Console 所有権確認 ★ -->
-<meta name="google-site-verification"
-content="googleaf7ef497ef5f9795.html">
+<title>腕立て伏せカウンター｜カメラで自動回数計測できる無料Webアプリ</title>
 
-<title>腕立て伏せ自動カウンター｜カメラで回数を数える無料Webアプリ</title>
-
-<meta name="description"
-content="スマホやPCのカメラで腕立て伏せの回数を自動でカウントできる無料Webアプリ。MediaPipe姿勢推定を使用。インストール不要。">
-
+<meta name="description" content="腕立て伏せカウンターの決定版。スマホやPCのカメラで腕立て伏せの回数を自動カウント。インストール不要・無料・目標回数設定・音通知対応。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="index, follow">
+<link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/">
 
-<link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/googleaf7ef497ef5f9795.html">
+<meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE">
+<meta name="theme-color" content="#111827">
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
 <style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --bg: linear-gradient(135deg, #0f172a, #020617);
+  --card: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+}
+
 body {
-  font-family: system-ui, sans-serif;
   margin: 0;
-  padding: 12px;
-  background: #f5f5f5;
-  text-align: center;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
 }
 
-h1 { font-size: 1.6rem; }
-
-#container {
-  position: relative;
-  max-width: 480px;
+.container {
+  max-width: 520px;
   margin: 0 auto;
+  padding: 16px;
 }
 
-video, canvas {
+.app {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+video {
   width: 100%;
-  border-radius: 12px;
-}
-
-canvas {
-  position: absolute;
-  left: 0;
-  top: 0;
+  border-radius: 18px;
+  background: #000;
 }
 
 .counter {
-  font-size: 2rem;
-  margin: 10px 0;
+  margin: 18px auto;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: bold;
 }
 
-button, input {
+.controls {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+input {
+  padding: 10px;
   font-size: 1rem;
-  padding: 8px;
-  margin: 4px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  width: 100px;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+button {
+  flex: 1;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 14px;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+button.start { background: #16a34a; }
+button.pause { background: #f59e0b; }
+button.reset { background: #dc2626; }
+
+section {
+  margin-top: 28px;
+  background: var(--card);
+  border-radius: 20px;
+  padding: 18px;
 }
 
 .warning {
   display: none;
-  background: #ffecec;
-  color: #900;
-  padding: 8px;
-  margin-bottom: 10px;
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 10px;
+  border-radius: 12px;
+  margin-bottom: 12px;
 }
 </style>
 </head>
 
 <body>
 
+<div class="container">
+
 <div id="line-warning" class="warning">
-⚠ LINE内ブラウザではカメラが使用できません。<br>
+LINEアプリ内ブラウザではカメラが使用できません。<br>
 右上「︙」→「ブラウザで開く」を選択してください。
 </div>
 
-<h1>腕立て伏せ自動カウンター</h1>
+<div class="app">
 
-<p>
-カメラで骨格を検出し、<br>
-腕立て伏せの回数を自動でカウントします。
-</p>
+<h1>腕立て伏せカウンター</h1>
+<div class="subtitle">カメラで自動回数計測・無料Webアプリ</div>
 
-<div id="container">
-  <video id="video" playsinline></video>
-  <canvas id="canvas"></canvas>
-</div>
+<video id="video" playsinline></video>
 
-<div class="counter">
-回数：<span id="count">0</span>
-</div>
+<div class="counter"><span id="count">0</span></div>
 
-<div>
-目標回数：
+<div class="controls">
+目標回数<br>
 <input type="number" id="target" value="10" min="1">
 </div>
 
-<div>
-<button id="start">スタート</button>
-<button id="pause">一時停止</button>
-<button id="reset">リセット</button>
+<div class="buttons">
+<button class="start" id="start">スタート</button>
+<button class="pause" id="pause">一時停止</button>
+<button class="reset" id="reset">リセット</button>
 </div>
+
+</div>
+
+<section>
+<h2>腕立て伏せを自動でカウント</h2>
+<p>
+スマホやPCのカメラで腕立て伏せの回数を自動カウント。
+インストール不要・無料で使えるトレーニング支援Webアプリです。
+</p>
+</section>
 
 <section>
 <h2>使い方</h2>
 <ol>
-<li>カメラに正面を向いてください</li>
-<li>スタートを押してください</li>
-<li>腕立て伏せを行うと自動で回数がカウントされます</li>
+<li>カメラの前に立ちます</li>
+<li>スタートを押します</li>
+<li>腕立て伏せを行います</li>
 </ol>
 </section>
 
+<audio id="countSound" src="count.mp3"></audio>
+<audio id="goalSound" src="goal.mp3"></audio>
+
+</div>
+
 <script>
-// LINE内ブラウザ検出
 if (/Line/i.test(navigator.userAgent)) {
   document.getElementById("line-warning").style.display = "block";
 }
 
-// ===== 音声 =====
-const countSound = new Audio("count.mp3");
-const goalSound  = new Audio("goal.mp3");
-
-function enableSound() {
-  countSound.play().then(() => {
-    countSound.pause();
-    countSound.currentTime = 0;
-  }).catch(()=>{});
-}
-
-// ===== 状態 =====
 let count = 0;
 let running = false;
-let state = "up";
+let position = null;
 
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
 const countEl = document.getElementById("count");
 const targetEl = document.getElementById("target");
+const countSound = document.getElementById("countSound");
+const goalSound = document.getElementById("goalSound");
 
-// ===== Pose =====
 const pose = new Pose({
-  locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+  locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
 });
 
 pose.setOptions({
-  modelComplexity: 1,
-  minDetectionConfidence: 0.6,
-  minTrackingConfidence: 0.6
+  minDetectionConfidence: 0.7,
+  minTrackingConfidence: 0.7
 });
 
-pose.onResults(results => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+pose.onResults(r => {
+  if (!running || !r.poseLandmarks) return;
+  const lm = r.poseLandmarks;
 
-  if (!results.poseLandmarks) return;
+  if (lm[12].y > lm[14].y && lm[11].y > lm[13].y) position = "down";
 
-  drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
-    { color: "lime", lineWidth: 3 });
-  drawLandmarks(ctx, results.poseLandmarks,
-    { color: "red", radius: 4 });
-
-  if (!running) return;
-
-  const shoulderY =
-    (results.poseLandmarks[11].y +
-     results.poseLandmarks[12].y) / 2;
-
-  if (shoulderY > 0.6) state = "down";
-
-  if (shoulderY < 0.5 && state === "down") {
-    state = "up";
+  if (lm[12].y < lm[14].y && lm[11].y < lm[13].y && position === "down") {
+    position = "up";
     count++;
     countEl.textContent = count;
-
-    countSound.currentTime = 0;
     countSound.play();
 
     if (count >= Number(targetEl.value)) {
@@ -186,42 +228,23 @@ pose.onResults(results => {
   }
 });
 
-// ===== Camera =====
-const camera = new Camera(video, {
-  onFrame: async () => {
-    await pose.send({ image: video });
-  },
+const camera = new Camera(document.getElementById("video"), {
+  onFrame: async () => pose.send({ image: video }),
   width: 640,
   height: 480
 });
 
-camera.start().catch(() => {
-  alert("カメラを起動できません。HTTPSで開いてください。");
-});
+camera.start();
 
-video.onloadedmetadata = () => {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-};
-
-// ===== Buttons =====
-document.getElementById("start").onclick = () => {
-  enableSound();
-  running = true;
-};
-
-document.getElementById("pause").onclick = () => {
-  running = false;
-};
-
+document.getElementById("start").onclick = () => running = true;
+document.getElementById("pause").onclick = () => running = false;
 document.getElementById("reset").onclick = () => {
   running = false;
   count = 0;
-  state = "up";
+  position = null;
   countEl.textContent = 0;
 };
 </script>
 
 </body>
 </html>
-
