@@ -10,11 +10,11 @@
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/">
 
-<meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE">
 <meta name="theme-color" content="#111827">
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
 <style>
 :root {
@@ -22,21 +22,17 @@
   --primary-dark: #1e40af;
   --bg: linear-gradient(135deg, #0f172a, #020617);
   --card: #ffffff;
-  --text: #111827;
-  --muted: #6b7280;
 }
 
 body {
   margin: 0;
-  padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: system-ui, sans-serif;
   background: var(--bg);
-  color: var(--text);
 }
 
 .container {
   max-width: 520px;
-  margin: 0 auto;
+  margin: auto;
   padding: 16px;
 }
 
@@ -44,30 +40,29 @@ body {
   background: var(--card);
   border-radius: 24px;
   padding: 20px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.35);
 }
 
 h1 {
   text-align: center;
-  font-size: 1.6rem;
-  margin-bottom: 8px;
 }
 
-.subtitle {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.95rem;
-  margin-bottom: 16px;
+.video-wrapper {
+  position: relative;
 }
 
-video {
+video, canvas {
   width: 100%;
   border-radius: 18px;
-  background: #000;
+}
+
+canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 .counter {
-  margin: 18px auto;
+  margin: 16px auto;
   width: 140px;
   height: 140px;
   border-radius: 50%;
@@ -77,80 +72,43 @@ video {
   align-items: center;
   justify-content: center;
   font-size: 3rem;
-  font-weight: bold;
-}
-
-.controls {
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-input {
-  padding: 10px;
-  font-size: 1rem;
-  border-radius: 10px;
-  border: 1px solid #d1d5db;
-  width: 100px;
 }
 
 .buttons {
   display: flex;
   gap: 8px;
-  justify-content: center;
-  margin-top: 10px;
 }
 
 button {
   flex: 1;
   padding: 12px;
-  font-size: 1rem;
   border-radius: 14px;
   border: none;
   color: #fff;
   cursor: pointer;
 }
 
-button.start { background: #16a34a; }
-button.pause { background: #f59e0b; }
-button.reset { background: #dc2626; }
-
-section {
-  margin-top: 28px;
-  background: var(--card);
-  border-radius: 20px;
-  padding: 18px;
-}
-
-.warning {
-  display: none;
-  background: #fee2e2;
-  color: #991b1b;
-  padding: 10px;
-  border-radius: 12px;
-  margin-bottom: 12px;
-}
+.start { background: #16a34a; }
+.pause { background: #f59e0b; }
+.reset { background: #dc2626; }
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
-<div id="line-warning" class="warning">
-LINEアプリ内ブラウザではカメラが使用できません。<br>
-右上「︙」→「ブラウザで開く」を選択してください。
-</div>
-
 <div class="app">
 
 <h1>腕立て伏せカウンター</h1>
-<div class="subtitle">カメラで自動回数計測・無料Webアプリ</div>
 
-<video id="video" playsinline></video>
+<div class="video-wrapper">
+  <video id="video" playsinline></video>
+  <canvas id="canvas"></canvas>
+</div>
 
 <div class="counter"><span id="count">0</span></div>
 
-<div class="controls">
+<div style="text-align:center">
 目標回数<br>
 <input type="number" id="target" value="10" min="1">
 </div>
@@ -162,74 +120,69 @@ LINEアプリ内ブラウザではカメラが使用できません。<br>
 </div>
 
 </div>
-
-<section>
-<h2>腕立て伏せを自動でカウント</h2>
-<p>
-スマホやPCのカメラで腕立て伏せの回数を自動カウント。
-インストール不要・無料で使えるトレーニング支援Webアプリです。
-</p>
-</section>
-
-<section>
-<h2>使い方</h2>
-<ol>
-<li>カメラの前に立ちます</li>
-<li>スタートを押します</li>
-<li>腕立て伏せを行います</li>
-</ol>
-</section>
+</div>
 
 <audio id="countSound" src="count.mp3"></audio>
 <audio id="goalSound" src="goal.mp3"></audio>
 
-</div>
-
 <script>
-if (/Line/i.test(navigator.userAgent)) {
-  document.getElementById("line-warning").style.display = "block";
-}
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
 let count = 0;
 let running = false;
 let position = null;
-
-const countEl = document.getElementById("count");
-const targetEl = document.getElementById("target");
-const countSound = document.getElementById("countSound");
-const goalSound = document.getElementById("goalSound");
 
 const pose = new Pose({
   locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
 });
 
 pose.setOptions({
+  modelComplexity: 1,
   minDetectionConfidence: 0.7,
   minTrackingConfidence: 0.7
 });
 
-pose.onResults(r => {
-  if (!running || !r.poseLandmarks) return;
-  const lm = r.poseLandmarks;
+pose.onResults(results => {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 
-  if (lm[12].y > lm[14].y && lm[11].y > lm[13].y) position = "down";
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (lm[12].y < lm[14].y && lm[11].y < lm[13].y && position === "down") {
-    position = "up";
-    count++;
-    countEl.textContent = count;
-    countSound.play();
+  if (results.poseLandmarks) {
+    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
+      { color: "#00ffcc", lineWidth: 4 });
+    drawLandmarks(ctx, results.poseLandmarks,
+      { color: "#ff0066", lineWidth: 2 });
 
-    if (count >= Number(targetEl.value)) {
-      goalSound.play();
-      running = false;
-      alert("目標達成！");
+    if (!running) return;
+
+    const lm = results.poseLandmarks;
+
+    if (lm[12].y > lm[14].y && lm[11].y > lm[13].y) {
+      position = "down";
+    }
+
+    if (lm[12].y < lm[14].y && lm[11].y < lm[13].y && position === "down") {
+      position = "up";
+      count++;
+      document.getElementById("count").textContent = count;
+      document.getElementById("countSound").play();
+
+      if (count >= Number(document.getElementById("target").value)) {
+        document.getElementById("goalSound").play();
+        running = false;
+        alert("目標達成！");
+      }
     }
   }
 });
 
-const camera = new Camera(document.getElementById("video"), {
-  onFrame: async () => pose.send({ image: video }),
+const camera = new Camera(video, {
+  onFrame: async () => {
+    await pose.send({ image: video });
+  },
   width: 640,
   height: 480
 });
@@ -242,9 +195,13 @@ document.getElementById("reset").onclick = () => {
   running = false;
   count = 0;
   position = null;
-  countEl.textContent = 0;
+  document.getElementById("count").textContent = 0;
 };
 </script>
 
 </body>
 </html>
+
+</body>
+</html>
+
