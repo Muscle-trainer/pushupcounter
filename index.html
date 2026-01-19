@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 
-<title>腕立て伏せカウンター｜カメラで自動回数計測できる無料Webアプリ</title>
+<title>腕立てカウンター｜自動回数計測可能,無料Webアプリ</title>
 
 <meta name="description" content="腕立て伏せカウンターの決定版。スマホやPCのカメラで腕立て伏せの回数を自動カウント。インストール不要・無料・目標回数設定・音通知対応。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -97,7 +97,7 @@ button {
 <div class="container">
 <div class="app">
 
-<h1>腕立て伏せカウンター</h1>
+<h1>腕立てカウンター</h1>
 
 <div class="video-wrapper">
   <video id="video" playsinline></video>
@@ -177,7 +177,7 @@ pose.onResults(results => {
     if (count >= Number(document.getElementById("target").value)) {
       document.getElementById("goalSound").play();
       running = false;
-      alert("目標達成！");
+      alert("You did it！");
     }
   }
 });
@@ -204,3 +204,4 @@ document.getElementById("reset").onclick = () => {
 
 </body>
 </html>
+
