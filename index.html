@@ -2,65 +2,122 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>腕立て伏せ 自動カウンター</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- MediaPipe -->
+<title>腕立て伏せカウンター｜カメラで自動回数計測できる無料Webアプリ</title>
+
+<meta name="description" content="腕立て伏せカウンターの決定版。スマホやPCのカメラで腕立て伏せの回数を自動カウント。インストール不要・無料・目標回数設定・音通知対応。">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/">
+
+<meta name="theme-color" content="#111827">
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
 <style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --bg: linear-gradient(135deg, #0f172a, #020617);
+  --card: #ffffff;
+}
+
 body {
   margin: 0;
-  background: #111;
-  color: #fff;
   font-family: system-ui, sans-serif;
+  background: var(--bg);
+}
+
+.container {
+  max-width: 520px;
+  margin: auto;
+  padding: 16px;
+}
+
+.app {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 20px;
+}
+
+h1 {
   text-align: center;
 }
-#container {
+
+.video-wrapper {
   position: relative;
-  max-width: 480px;
-  margin: auto;
 }
-video, canvas {
+
+video {
+  display: none; /* ★ 非表示（入力専用） */
+}
+
+canvas {
   width: 100%;
-  border-radius: 12px;
+  border-radius: 18px;
 }
-button, input {
-  margin: 4px;
-  padding: 8px 14px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: none;
+
+.counter {
+  margin: 16px auto;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
 }
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
 button {
-  background: #00c853;
-  font-weight: bold;
+  flex: 1;
+  padding: 12px;
+  border-radius: 14px;
+  border: none;
+  color: #fff;
+  cursor: pointer;
 }
-#count {
-  font-size: 36px;
-}
+
+.start { background: #16a34a; }
+.pause { background: #f59e0b; }
+.reset { background: #dc2626; }
 </style>
 </head>
 
 <body>
-<h1>腕立て伏せ 自動カウンター</h1>
-<p>カメラに正面を向いて腕立て伏せを行ってください</p>
 
-<div id="container">
+<div class="container">
+<div class="app">
+
+<h1>腕立て伏せカウンター</h1>
+
+<div class="video-wrapper">
   <video id="video" playsinline></video>
   <canvas id="canvas"></canvas>
 </div>
 
-<div>
-  目標回数 <input id="goal" type="number" value="10">
-  <br>
-  <button id="start">スタート</button>
-  <button id="pause">一時停止</button>
-  <button id="reset">リセット</button>
-  <div id="count">0</div>
-  <div id="status">初期化中</div>
+<div class="counter"><span id="count">0</span></div>
+
+<div style="text-align:center">
+目標回数<br>
+<input type="number" id="target" value="10" min="1">
+</div>
+
+<div class="buttons">
+<button class="start" id="start">スタート</button>
+<button class="pause" id="pause">一時停止</button>
+<button class="reset" id="reset">リセット</button>
+</div>
+
+</div>
 </div>
 
 <audio id="countSound" src="count.mp3"></audio>
@@ -71,24 +128,19 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const countEl = document.getElementById("count");
-const statusEl = document.getElementById("status");
-
 let count = 0;
 let running = false;
-let down = false;
+let position = null;
 
-// Pose 初期化
 const pose = new Pose({
-  locateFile: file =>
-    `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+  locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
 });
 
 pose.setOptions({
   modelComplexity: 1,
   smoothLandmarks: true,
-  minDetectionConfidence: 0.5,
-  minTrackingConfidence: 0.5
+  minDetectionConfidence: 0.7,
+  minTrackingConfidence: 0.7
 });
 
 pose.onResults(results => {
@@ -96,74 +148,59 @@ pose.onResults(results => {
   canvas.height = video.videoHeight;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!results.poseLandmarks) return;
+
+  // ★ 映像を canvas に描画（ここがポイント）
   ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
-  if (!results.poseLandmarks) {
-    statusEl.textContent = "骨格未検出";
-    return;
-  }
-
+  // 骨格描画
   drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
-    { color: "#00ff00", lineWidth: 3 });
+    { color: "#00ffcc", lineWidth: 4 });
   drawLandmarks(ctx, results.poseLandmarks,
-    { color: "#ff0000", lineWidth: 2 });
-
-  statusEl.textContent = "骨格検出中";
+    { color: "#ff0066", lineWidth: 2 });
 
   if (!running) return;
 
-  const shoulder = results.poseLandmarks[11];
-  const elbow = results.poseLandmarks[13];
+  const lm = results.poseLandmarks;
 
-  if (!shoulder || !elbow) return;
+  if (lm[12].y > lm[14].y && lm[11].y > lm[13].y) {
+    position = "down";
+  }
 
-  if (elbow.y > shoulder.y + 0.05) down = true;
-
-  if (down && elbow.y < shoulder.y - 0.05) {
+  if (lm[12].y < lm[14].y && lm[11].y < lm[13].y && position === "down") {
+    position = "up";
     count++;
-    countEl.textContent = count;
+    document.getElementById("count").textContent = count;
     document.getElementById("countSound").play();
-    down = false;
 
-    if (count >= Number(document.getElementById("goal").value)) {
+    if (count >= Number(document.getElementById("target").value)) {
       document.getElementById("goalSound").play();
       running = false;
-      statusEl.textContent = "目標達成！";
+      alert("目標達成！");
     }
   }
 });
 
-// ★ 常時カメラ → pose.send（ここが最重要）
 const camera = new Camera(video, {
   onFrame: async () => {
     await pose.send({ image: video });
   },
-  width: 480,
-  height: 640
+  width: 640,
+  height: 480
 });
 
-camera.start().then(() => {
-  statusEl.textContent = "カメラ起動完了";
-});
+camera.start();
 
-// ボタン
-document.getElementById("start").onclick = () => {
-  running = true;
-  statusEl.textContent = "計測中";
-};
-
-document.getElementById("pause").onclick = () => {
-  running = false;
-  statusEl.textContent = "一時停止";
-};
-
+document.getElementById("start").onclick = () => running = true;
+document.getElementById("pause").onclick = () => running = false;
 document.getElementById("reset").onclick = () => {
+  running = false;
   count = 0;
-  down = false;
-  countEl.textContent = "0";
-  statusEl.textContent = "リセット";
+  position = null;
+  document.getElementById("count").textContent = 0;
 };
 </script>
+
 </body>
 </html>
-
