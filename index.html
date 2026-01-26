@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 
-<title>腕立てカウンター｜自動回数計測可能,無料Webアプリ</title>
+<title>腕立て伏せカウンター｜AI自動計測・無料・スマホ対応Webアプリ</title>
 
-<meta name="description" content="腕立て伏せカウンターの決定版。スマホやPCのカメラで腕立て伏せの回数を自動カウント。インストール不要・無料・目標回数設定・音通知対応。">
+<meta name="description" content="腕立て伏せカウンターの決定版。スマホやPCのカメラで腕立て伏せの回数を自動カウント。インストール不要・無料・目標回数設定・音通知対応のWebアプリです。">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/">
@@ -23,42 +23,34 @@
   --bg: linear-gradient(135deg, #0f172a, #020617);
   --card: #ffffff;
 }
-
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
   background: var(--bg);
 }
-
 .container {
   max-width: 520px;
   margin: auto;
   padding: 16px;
 }
-
 .app {
   background: var(--card);
   border-radius: 24px;
   padding: 20px;
 }
-
 h1 {
   text-align: center;
 }
-
 .video-wrapper {
   position: relative;
 }
-
 video {
-  display: none; /* ★ 非表示（入力専用） */
+  display: none;
 }
-
 canvas {
   width: 100%;
   border-radius: 18px;
 }
-
 .counter {
   margin: 16px auto;
   width: 140px;
@@ -71,12 +63,10 @@ canvas {
   justify-content: center;
   font-size: 3rem;
 }
-
 .buttons {
   display: flex;
   gap: 8px;
 }
-
 button {
   flex: 1;
   padding: 12px;
@@ -85,10 +75,19 @@ button {
   color: #fff;
   cursor: pointer;
 }
-
 .start { background: #16a34a; }
 .pause { background: #f59e0b; }
 .reset { background: #dc2626; }
+
+.seo {
+  margin-top: 24px;
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+.seo h2 {
+  font-size: 1.1rem;
+  margin-top: 20px;
+}
 </style>
 </head>
 
@@ -97,7 +96,7 @@ button {
 <div class="container">
 <div class="app">
 
-<h1>Push up counter</h1>
+<h1>腕立て伏せカウンター</h1>
 
 <div class="video-wrapper">
   <video id="video" playsinline></video>
@@ -116,6 +115,36 @@ button {
 <button class="pause" id="pause">一時停止</button>
 <button class="reset" id="reset">リセット</button>
 </div>
+
+<!-- SEO本文 -->
+<section class="seo">
+<h2>腕立て伏せカウンターとは？</h2>
+<p>
+腕立て伏せカウンターは、スマホやPCのカメラを使って腕立て伏せの回数を自動で計測できる無料Webアプリです。
+インストール不要で、ブラウザを開くだけですぐに利用できます。
+</p>
+
+<h2>自動カウントの仕組み</h2>
+<p>
+AIによる骨格推定技術を用いて、腕と肩の動きをリアルタイムで解析します。
+正しいフォームでの上下動のみを検出するため、数え間違いが起こりにくい設計です。
+</p>
+
+<h2>この腕立てカウンターの特徴</h2>
+<ul>
+<li>完全無料・登録不要</li>
+<li>スマホ・PC両対応</li>
+<li>目標回数設定機能</li>
+<li>カウント音・達成音対応</li>
+<li>カメラ映像は保存されません</li>
+</ul>
+
+<h2>こんな人におすすめ</h2>
+<p>
+自宅トレーニングを効率化したい方、腕立て伏せの回数管理が面倒な方、
+無料で使える腕立て伏せカウンターを探している方に最適です。
+</p>
+</section>
 
 </div>
 </div>
@@ -146,50 +175,35 @@ pose.setOptions({
 pose.onResults(results => {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   if (!results.poseLandmarks) return;
 
-  // ★ 映像を canvas に描画（ここがポイント）
   ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-
-  // 骨格描画
-  drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
-    { color: "#00ffcc", lineWidth: 4 });
-  drawLandmarks(ctx, results.poseLandmarks,
-    { color: "#ff0066", lineWidth: 2 });
+  drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: "#00ffcc", lineWidth: 4 });
+  drawLandmarks(ctx, results.poseLandmarks, { color: "#ff0066", lineWidth: 2 });
 
   if (!running) return;
 
   const lm = results.poseLandmarks;
-
-  if (lm[12].y > lm[14].y && lm[11].y > lm[13].y) {
-    position = "down";
-  }
-
+  if (lm[12].y > lm[14].y && lm[11].y > lm[13].y) position = "down";
   if (lm[12].y < lm[14].y && lm[11].y < lm[13].y && position === "down") {
     position = "up";
     count++;
     document.getElementById("count").textContent = count;
     document.getElementById("countSound").play();
-
     if (count >= Number(document.getElementById("target").value)) {
       document.getElementById("goalSound").play();
       running = false;
-      alert("You did it！");
+      alert("You did it!");
     }
   }
 });
 
 const camera = new Camera(video, {
-  onFrame: async () => {
-    await pose.send({ image: video });
-  },
+  onFrame: async () => await pose.send({ image: video }),
   width: 640,
   height: 480
 });
-
 camera.start();
 
 document.getElementById("start").onclick = () => running = true;
@@ -202,7 +216,26 @@ document.getElementById("reset").onclick = () => {
 };
 </script>
 
+<!-- FAQ構造化データ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "腕立て伏せカウンターは無料ですか？",
+    "acceptedAnswer": { "@type": "Answer", "text": "はい、完全無料で利用できます。登録やインストールも不要です。" }
+  },{
+    "@type": "Question",
+    "name": "スマホだけで使えますか？",
+    "acceptedAnswer": { "@type": "Answer", "text": "はい。スマートフォンのカメラとブラウザがあれば利用可能です。" }
+  },{
+    "@type": "Question",
+    "name": "カメラ映像は保存されますか？",
+    "acceptedAnswer": { "@type": "Answer", "text": "いいえ。映像は端末内で処理され、保存や送信はされません。" }
+  }]
+}
+</script>
+
 </body>
 </html>
-
-
