@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<title>Push-Up Counter | Free AI Camera-Based Workout Counter</title>
+
+<meta name="description" content="Free push-up counter using your camera. Automatically count push-ups with AI pose detection. No installation required. Works on mobile and PC.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="index, follow">
+
+<link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/en.html">
+
+<meta name="theme-color" content="#111827">
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --bg: linear-gradient(135deg, #0f172a, #020617);
+  --card: #ffffff;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+}
+
+.container {
+  max-width: 520px;
+  margin: auto;
+  padding: 16px;
+}
+
+.app {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 20px;
+}
+
+h1,h2 {
+  text-align: center;
+}
+
+.video-wrapper {
+  position: relative;
+}
+
+video {
+  display: none;
+}
+
+canvas {
+  width: 100%;
+  border-radius: 18px;
+}
+
+.counter {
+  margin: 16px auto;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 14px;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.start { background: #16a34a; }
+.pause { background: #f59e0b; }
+.reset { background: #dc2626; }
+
+section {
+  margin-top: 32px;
+  line-height: 1.8;
+}
+</style>
+</head>
+
+<body>
+<main class="container">
+<div class="app">
+
+<h1>Push-Up Counter</h1>
+
+<p style="text-align:center">
+Automatically count your push-ups using your camera.<br>
+No installation. 100% free. Works on mobile and desktop.
+</p>
+
+<p style="text-align:center">
+<a href="./index.html">🇯🇵 日本語はこちら</a>
+</p>
+
+<div class="video-wrapper">
+  <video id="video" playsinline></video>
+  <canvas id="canvas"></canvas>
+</div>
+
+<div class="counter"><span id="count">0</span></div>
+
+<div style="text-align:center">
+Target reps<br>
+<input type="number" id="target" value="10" min="1">
+</div>
+
+<div class="buttons">
+<button class="start" id="start">Start</button>
+<button class="pause" id="pause">Pause</button>
+<button class="reset" id="reset">Reset</button>
+</div>
+
+<section>
+<h2>What is this Push-Up Counter?</h2>
+<p>
+This is a free web-based push-up counter that uses AI pose detection
+to automatically count your repetitions using your device camera.
+</p>
+<p>
+You don't need to install any app. Just open the page and start training.
+</p>
+</section>
+
+<section>
+<h2>Features</h2>
+<ul>
+<li>📷 Automatic push-up detection</li>
+<li>📱 Works on smartphones and PCs</li>
+<li>🆓 Completely free</li>
+<li>🎯 Target repetition setting</li>
+<li>🔊 Sound notifications</li>
+<li>🔒 No video is stored or uploaded</li>
+</ul>
+</section>
+
+<section>
+<h2>How to use</h2>
+<ol>
+<li>Place your device facing you</li>
+<li>Press the Start button</li>
+<li>Do your push-ups</li>
+<li>The counter increases automatically</li>
+</ol>
+</section>
+
+</div>
+</main>
+
+<audio id="countSound" src="count.mp3"></audio>
+<audio id="goalSound" src="goal.mp3"></audio>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let count = 0;
+let running = false;
+let position = null;
+
+const pose = new Pose({
+  locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+});
+
+pose.setOptions({
+  modelComplexity: 1,
+  smoothLandmarks: true,
+  minDetectionConfidence: 0.7,
+  minTrackingConfidence: 0.7
+});
+
+pose.onResults(results => {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!results.poseLandmarks) return;
+
+  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+  drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
+    { color: "#00ffcc", lineWidth: 4 });
+  drawLandmarks(ctx, results.poseLandmarks,
+    { color: "#ff0066", lineWidth: 2 });
+
+  if (!running) return;
+
+  const lm = results.poseLandmarks;
+
+  if (lm[12].y > lm[14].y && lm[11].y > lm[13].y) position = "down";
+
+  if (lm[12].y < lm[14].y && lm[11].y < lm[13].y && position === "down") {
+    position = "up";
+    count++;
+    document.getElementById("count").textContent = count;
+    document.getElementById("countSound").play();
+
+    if (count >= Number(document.getElementById("target").value)) {
+      document.getElementById("goalSound").play();
+      running = false;
+      alert("Goal achieved!");
+    }
+  }
+});
+
+const camera = new Camera(video, {
+  onFrame: async () => {
+    await pose.send({ image: video });
+  },
+  width: 640,
+  height: 480
+});
+camera.start();
+
+document.getElementById("start").onclick = () => running = true;
+document.getElementById("pause").onclick = () => running = false;
+document.getElementById("reset").onclick = () => {
+  running = false;
+  count = 0;
+  position = null;
+  document.getElementById("count").textContent = 0;
+};
+</script>
+
+</body>
+</html>
