@@ -3,32 +3,35 @@
 <head>
 <meta charset="UTF-8">
 
-<title>Push-Up Counter | Free AI Camera-Based Workout Counter</title>
+<!-- ===== STRONG SEO TITLE ===== -->
+<title>Push Up Counter | Automatic Push-Up Counter Using Camera (Free)</title>
 
-<meta name="description" content="Free push-up counter using your camera. Automatically count push-ups with AI pose detection. No installation required. Works on mobile and PC.">
+<!-- ===== META DESCRIPTION ===== -->
+<meta name="description" content="Free automatic push up counter using your camera. Count push-ups accurately online with no app, no signup, and no installation. Works on mobile and PC.">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="index, follow">
+<link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/">
 
-<link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/en.html">
+<!-- ===== Open Graph ===== -->
+<meta property="og:title" content="Push Up Counter | Automatic Camera-Based Counter">
+<meta property="og:description" content="Automatically count your push-ups using your camera. 100% free, no installation required.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://muscle-trainer.github.io/pushupcounter/">
 
 <meta name="theme-color" content="#111827">
 
+<!-- ===== MediaPipe ===== -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
 <style>
-:root {
-  --primary: #2563eb;
-  --primary-dark: #1e40af;
-  --bg: linear-gradient(135deg, #0f172a, #020617);
-  --card: #ffffff;
-}
-
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
-  background: var(--bg);
+  background: #0f172a;
+  color: #111;
 }
 
 .container {
@@ -38,22 +41,16 @@ body {
 }
 
 .app {
-  background: var(--card);
+  background: #fff;
   border-radius: 24px;
   padding: 20px;
 }
 
-h1,h2 {
+h1, h2 {
   text-align: center;
 }
 
-.video-wrapper {
-  position: relative;
-}
-
-video {
-  display: none;
-}
+video { display: none; }
 
 canvas {
   width: 100%;
@@ -65,7 +62,7 @@ canvas {
   width: 140px;
   height: 140px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, #2563eb, #1e40af);
   color: #fff;
   display: flex;
   align-items: center;
@@ -91,37 +88,33 @@ button {
 .pause { background: #f59e0b; }
 .reset { background: #dc2626; }
 
-section {
+.seo {
   margin-top: 32px;
   line-height: 1.8;
+  font-size: 0.95rem;
 }
 </style>
 </head>
 
 <body>
-<main class="container">
+
+<div class="container">
 <div class="app">
 
-<h1>Push-Up Counter</h1>
+<!-- ===== H1: CORE KEYWORD ===== -->
+<h1>Automatic Push Up Counter</h1>
 
 <p style="text-align:center">
-Automatically count your push-ups using your camera.<br>
-No installation. 100% free. Works on mobile and desktop.
+A <strong>free push up counter</strong> that automatically counts your push-ups using your device camera.
 </p>
 
-<p style="text-align:center">
-<a href="./index.html">🇯🇵 日本語はこちら</a>
-</p>
-
-<div class="video-wrapper">
-  <video id="video" playsinline></video>
-  <canvas id="canvas"></canvas>
-</div>
+<canvas id="canvas"></canvas>
+<video id="video" playsinline></video>
 
 <div class="counter"><span id="count">0</span></div>
 
 <div style="text-align:center">
-Target reps<br>
+Target Reps<br>
 <input type="number" id="target" value="10" min="1">
 </div>
 
@@ -131,41 +124,50 @@ Target reps<br>
 <button class="reset" id="reset">Reset</button>
 </div>
 
-<section>
-<h2>What is this Push-Up Counter?</h2>
-<p>
-This is a free web-based push-up counter that uses AI pose detection
-to automatically count your repetitions using your device camera.
-</p>
-<p>
-You don't need to install any app. Just open the page and start training.
-</p>
-</section>
+<!-- ===== SEO CONTENT START ===== -->
+<div class="seo">
 
-<section>
-<h2>Features</h2>
+<h2>What is a Push Up Counter?</h2>
+<p>
+A <strong>push up counter</strong> is a tool that tracks how many push-ups you perform.
+This <strong>automatic push-up counter</strong> uses your camera and AI-based pose detection
+to count push-ups accurately in real time.
+</p>
+
+<h2>Why Use This Automatic Push Up Counter?</h2>
 <ul>
-<li>📷 Automatic push-up detection</li>
-<li>📱 Works on smartphones and PCs</li>
-<li>🆓 Completely free</li>
-<li>🎯 Target repetition setting</li>
-<li>🔊 Sound notifications</li>
-<li>🔒 No video is stored or uploaded</li>
+<li>Automatic push-up counting using camera</li>
+<li>No app installation required</li>
+<li>Works directly in your browser</li>
+<li>Free push up counter online</li>
+<li>Compatible with mobile and desktop</li>
 </ul>
-</section>
 
-<section>
-<h2>How to use</h2>
-<ol>
-<li>Place your device facing you</li>
-<li>Press the Start button</li>
-<li>Do your push-ups</li>
-<li>The counter increases automatically</li>
-</ol>
-</section>
+<h2>How Does the Push Up Counter Work?</h2>
+<p>
+This push up counter analyzes your upper body movement using real-time pose estimation.
+Each completed push-up is detected when your shoulders and elbows move through the correct range of motion.
+</p>
+
+<h2>Frequently Asked Questions</h2>
+
+<p><strong>Is this push up counter free?</strong><br>
+Yes. This is a completely free push up counter with no limitations.</p>
+
+<p><strong>Do I need to install an app?</strong><br>
+No. This push up counter works online in your browser.</p>
+
+<p><strong>Can I use this push up counter on my phone?</strong><br>
+Yes. It works on smartphones, tablets, and PCs.</p>
+
+<p><strong>Is the camera data saved?</strong><br>
+No. All processing happens locally in your browser.</p>
 
 </div>
-</main>
+<!-- ===== SEO CONTENT END ===== -->
+
+</div>
+</div>
 
 <audio id="countSound" src="count.mp3"></audio>
 <audio id="goalSound" src="goal.mp3"></audio>
@@ -198,6 +200,7 @@ pose.onResults(results => {
   if (!results.poseLandmarks) return;
 
   ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
   drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
     { color: "#00ffcc", lineWidth: 4 });
   drawLandmarks(ctx, results.poseLandmarks,
@@ -230,6 +233,7 @@ const camera = new Camera(video, {
   width: 640,
   height: 480
 });
+
 camera.start();
 
 document.getElementById("start").onclick = () => running = true;
@@ -244,7 +248,3 @@ document.getElementById("reset").onclick = () => {
 
 </body>
 </html>
-
-
-
-
