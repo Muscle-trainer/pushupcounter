@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+
+<!-- ===== SEO TITLE ===== -->
+<title>Contador de Flexiones | Contador Automático con Cámara (Gratis)</title>
+
+<!-- ===== META DESCRIPTION ===== -->
+<meta name="description" content="Contador automático de flexiones gratis usando la cámara. Cuenta flexiones online sin app, sin registro y sin instalación. Funciona en móvil y PC.">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/es/">
+
+<!-- ===== Open Graph ===== -->
+<meta property="og:title" content="Contador de Flexiones | Contador Automático Gratis">
+<meta property="og:description" content="Cuenta tus flexiones automáticamente usando tu cámara. 100% gratis, sin instalar nada.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://muscle-trainer.github.io/pushupcounter/es/">
+
+<meta name="theme-color" content="#111827">
+
+<!-- ===== MediaPipe ===== -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #0f172a;
+}
+
+.container {
+  max-width: 520px;
+  margin: auto;
+  padding: 16px;
+}
+
+.app {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 20px;
+}
+
+h1, h2 {
+  text-align: center;
+}
+
+video { display: none; }
+
+canvas {
+  width: 100%;
+  border-radius: 18px;
+}
+
+.counter {
+  margin: 16px auto;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 14px;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.start { background: #16a34a; }
+.pause { background: #f59e0b; }
+.reset { background: #dc2626; }
+
+.seo {
+  margin-top: 32px;
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="app">
+
+<!-- ===== H1 PRINCIPAL ===== -->
+<h1>Contador Automático de Flexiones</h1>
+
+<p style="text-align:center">
+Un <strong>contador de flexiones gratis</strong> que cuenta automáticamente tus flexiones usando la cámara del dispositivo.
+</p>
+
+<canvas id="canvas"></canvas>
+<video id="video" playsinline></video>
+
+<div class="counter"><span id="count">0</span></div>
+
+<div style="text-align:center">
+Objetivo de repeticiones<br>
+<input type="number" id="target" value="10" min="1">
+</div>
+
+<div class="buttons">
+<button class="start" id="start">Iniciar</button>
+<button class="pause" id="pause">Pausar</button>
+<button class="reset" id="reset">Reiniciar</button>
+</div>
+
+<!-- ===== CONTENIDO SEO ===== -->
+<div class="seo">
+
+<h2>¿Qué es un contador de flexiones?</h2>
+<p>
+Un <strong>contador de flexiones</strong> es una herramienta que registra cuántas flexiones realizas.
+Este <strong>contador automático de flexiones</strong> utiliza la cámara y detección de postura por IA
+para contar repeticiones en tiempo real.
+</p>
+
+<h2>¿Por qué usar este contador automático de flexiones?</h2>
+<ul>
+<li>Conteo automático usando la cámara</li>
+<li>No requiere instalar aplicaciones</li>
+<li>Funciona directamente en el navegador</li>
+<li>100% gratis</li>
+<li>Compatible con móvil y ordenador</li>
+</ul>
+
+<h2>¿Cómo funciona el contador de flexiones?</h2>
+<p>
+El contador analiza el movimiento de los brazos mediante detección de postura.
+Cada flexión completa se detecta cuando los brazos bajan y suben correctamente.
+</p>
+
+<h2>Preguntas frecuentes</h2>
+
+<p><strong>¿Este contador de flexiones es gratis?</strong><br>
+Sí, es completamente gratuito.</p>
+
+<p><strong>¿Necesito instalar algo?</strong><br>
+No. Funciona directamente en tu navegador.</p>
+
+<p><strong>¿Funciona en el móvil?</strong><br>
+Sí, funciona en teléfonos, tablets y PC.</p>
+
+<p><strong>¿Se guarda el video?</strong><br>
+No. Todo se procesa localmente en tu dispositivo.</p>
+
+</div>
+
+</div>
+</div>
+
+<audio id="countSound" src="count.mp3"></audio>
+<audio id="goalSound" src="goal.mp3"></audio>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let count = 0;
+let running = false;
+let estado = "arriba";
+let ultimoTiempo = 0;
+
+const COOLDOWN = 600;
+const ANGULO_ABAJO = 70;
+const ANGULO_ARRIBA = 160;
+
+function calcularAngulo(a, b, c) {
+  const ab = { x: a.x - b.x, y: a.y - b.y };
+  const cb = { x: c.x - b.x, y: c.y - b.y };
+  const dot = ab.x * cb.x + ab.y * cb.y;
+  const mag = Math.hypot(ab.x, ab.y) * Math.hypot(cb.x, cb.y);
+  return Math.acos(dot / mag) * (180 / Math.PI);
+}
+
+const pose = new Pose({
+  locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+});
+
+pose.setOptions({
+  modelComplexity: 1,
+  smoothLandmarks: true,
+  minDetectionConfidence: 0.7,
+  minTrackingConfidence: 0.7
+});
+
+pose.onResults(results => {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!results.poseLandmarks) return;
+
+  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+  drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
+    { color: "#00ffcc", lineWidth: 4 });
+
+  if (!running) return;
+
+  const lm = results.poseLandmarks;
+
+  const angulo =
+    (calcularAngulo(lm[11], lm[13], lm[15]) +
+     calcularAngulo(lm[12], lm[14], lm[16])) / 2;
+
+  const ahora = Date.now();
+
+  if (angulo < ANGULO_ABAJO && estado === "arriba") {
+    estado = "abajo";
+  }
+
+  if (angulo > ANGULO_ARRIBA && estado === "abajo" && ahora - ultimoTiempo > COOLDOWN) {
+    count++;
+    ultimoTiempo = ahora;
+    estado = "arriba";
+    document.getElementById("count").textContent = count;
+    document.getElementById("countSound").play();
+
+    if (count >= Number(document.getElementById("target").value)) {
+      document.getElementById("goalSound").play();
+      running = false;
+      alert("¡Objetivo alcanzado!");
+    }
+  }
+});
+
+const camera = new Camera(video, {
+  onFrame: async () => await pose.send({ image: video }),
+  width: 640,
+  height: 480
+});
+
+camera.start();
+
+document.getElementById("start").onclick = () => running = true;
+document.getElementById("pause").onclick = () => running = false;
+document.getElementById("reset").onclick = () => {
+  running = false;
+  count = 0;
+  estado = "arriba";
+  document.getElementById("count").textContent = 0;
+};
+</script>
+
+</body>
+</html>
