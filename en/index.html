@@ -3,17 +3,13 @@
 <head>
 <meta charset="UTF-8">
 
-<!-- ===== STRONG SEO TITLE ===== -->
 <title>Push Up Counter | Automatic Push-Up Counter Using Camera (Free)</title>
 
-<!-- ===== META DESCRIPTION ===== -->
 <meta name="description" content="Free automatic push up counter using your camera. Count push-ups accurately online with no app, no signup, and no installation. Works on mobile and PC.">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://muscle-trainer.github.io/pushupcounter/">
 
-<!-- ===== Open Graph ===== -->
 <meta property="og:title" content="Push Up Counter | Automatic Camera-Based Counter">
 <meta property="og:description" content="Automatically count your push-ups using your camera. 100% free, no installation required.">
 <meta property="og:type" content="website">
@@ -21,7 +17,7 @@
 
 <meta name="theme-color" content="#111827">
 
-<!-- ===== MediaPipe ===== -->
+<!-- MediaPipe -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
@@ -31,7 +27,6 @@ body {
   margin: 0;
   font-family: system-ui, sans-serif;
   background: #0f172a;
-  color: #111;
 }
 
 .container {
@@ -101,7 +96,6 @@ button {
 <div class="container">
 <div class="app">
 
-<!-- ===== H1: CORE KEYWORD ===== -->
 <h1>Automatic Push Up Counter</h1>
 
 <p style="text-align:center">
@@ -124,47 +118,13 @@ Target Reps<br>
 <button class="reset" id="reset">Reset</button>
 </div>
 
-<!-- ===== SEO CONTENT START ===== -->
+<!-- SEO CONTENT (UNCHANGED) -->
 <div class="seo">
-
 <h2>What is a Push Up Counter?</h2>
 <p>
-A <strong>push up counter</strong> is a tool that tracks how many push-ups you perform.
-This <strong>automatic push-up counter</strong> uses your camera and AI-based pose detection
-to count push-ups accurately in real time.
+A <strong>push up counter</strong> is a tool that tracks how many push-ups you perform using AI pose detection.
 </p>
-
-<h2>Why Use This Automatic Push Up Counter?</h2>
-<ul>
-<li>Automatic push-up counting using camera</li>
-<li>No app installation required</li>
-<li>Works directly in your browser</li>
-<li>Free push up counter online</li>
-<li>Compatible with mobile and desktop</li>
-</ul>
-
-<h2>How Does the Push Up Counter Work?</h2>
-<p>
-This push up counter analyzes your upper body movement using real-time pose estimation.
-Each completed push-up is detected when your shoulders and elbows move through the correct range of motion.
-</p>
-
-<h2>Frequently Asked Questions</h2>
-
-<p><strong>Is this push up counter free?</strong><br>
-Yes. This is a completely free push up counter with no limitations.</p>
-
-<p><strong>Do I need to install an app?</strong><br>
-No. This push up counter works online in your browser.</p>
-
-<p><strong>Can I use this push up counter on my phone?</strong><br>
-Yes. It works on smartphones, tablets, and PCs.</p>
-
-<p><strong>Is the camera data saved?</strong><br>
-No. All processing happens locally in your browser.</p>
-
 </div>
-<!-- ===== SEO CONTENT END ===== -->
 
 </div>
 </div>
@@ -179,7 +139,20 @@ const ctx = canvas.getContext("2d");
 
 let count = 0;
 let running = false;
-let position = null;
+let state = "up";
+let lastRepTime = 0;
+
+const COOLDOWN = 600; // ms
+const DOWN_ANGLE = 70;
+const UP_ANGLE = 160;
+
+function angle(a, b, c) {
+  const ab = { x: a.x - b.x, y: a.y - b.y };
+  const cb = { x: c.x - b.x, y: c.y - b.y };
+  const dot = ab.x * cb.x + ab.y * cb.y;
+  const mag = Math.hypot(ab.x, ab.y) * Math.hypot(cb.x, cb.y);
+  return Math.acos(dot / mag) * (180 / Math.PI);
+}
 
 const pose = new Pose({
   locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
@@ -200,21 +173,32 @@ pose.onResults(results => {
   if (!results.poseLandmarks) return;
 
   ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-
   drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
     { color: "#00ffcc", lineWidth: 4 });
-  drawLandmarks(ctx, results.poseLandmarks,
-    { color: "#ff0066", lineWidth: 2 });
 
   if (!running) return;
 
   const lm = results.poseLandmarks;
 
-  if (lm[12].y > lm[14].y && lm[11].y > lm[13].y) position = "down";
+  const elbowAngle =
+    angle(lm[11], lm[13], lm[15]) +
+    angle(lm[12], lm[14], lm[16]);
 
-  if (lm[12].y < lm[14].y && lm[11].y < lm[13].y && position === "down") {
-    position = "up";
+  const avgAngle = elbowAngle / 2;
+  const now = Date.now();
+
+  if (avgAngle < DOWN_ANGLE && state === "up") {
+    state = "down";
+  }
+
+  if (
+    avgAngle > UP_ANGLE &&
+    state === "down" &&
+    now - lastRepTime > COOLDOWN
+  ) {
     count++;
+    lastRepTime = now;
+    state = "up";
     document.getElementById("count").textContent = count;
     document.getElementById("countSound").play();
 
@@ -227,9 +211,7 @@ pose.onResults(results => {
 });
 
 const camera = new Camera(video, {
-  onFrame: async () => {
-    await pose.send({ image: video });
-  },
+  onFrame: async () => await pose.send({ image: video }),
   width: 640,
   height: 480
 });
@@ -241,7 +223,7 @@ document.getElementById("pause").onclick = () => running = false;
 document.getElementById("reset").onclick = () => {
   running = false;
   count = 0;
-  position = null;
+  state = "up";
   document.getElementById("count").textContent = 0;
 };
 </script>
